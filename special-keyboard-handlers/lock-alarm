@@ -1,0 +1,60 @@
+#!/bin/python3
+import os
+import subprocess
+import sched, time
+
+calmColor = '00FF00'
+#subprocess.call(['sh', 'export-keyboard-color', calmColor])
+
+capsLock = False
+numsLock = False
+
+alarmState = False
+
+subprocess.run('xhost si:localuser:root', shell=True)
+
+def calcLocks():
+    print(subprocess.run("DISPLAY=:1 xset q | grep -Po 'LED.*\K[0-9]'", shell=True, capture_output=True))
+    #print(subprocess.run("xset q | grep -Po 'LED.*\K[0-9]'", shell=True, capture_output=True, ))
+    out = subprocess.run("DISPLAY=:1 xset q | grep -Po 'LED.*\K[0-9]'", shell=True, capture_output=True).stdout[0] - ord('0')
+    global capsLock, numsLock
+    capsLock = out & 0x1
+    numsLock = out & 0x2
+
+
+calcLocks()
+
+s = sched.scheduler(time.time, time.sleep)
+
+
+def alarmColor():
+    global capsLock, numsLock
+    if capsLock and not numsLock:
+        return 'FF0000'
+    elif capsLock:
+        return '00E2FF'
+    elif not numsLock:
+        return 'FF8000'
+
+
+delay = 0.25
+
+
+def alarmCallback(sc):
+    calcLocks()
+    global capsLock, numsLock, alarmState
+    if capsLock or not numsLock:
+        if alarmState:
+            #print(calmColor)
+            subprocess.call(['sh', '/usr/local/bin/export-keyboard-color', calmColor])
+        else:
+            #print(alarmColor())
+            subprocess.call(['sh', '/usr/local/bin/export-keyboard-color', alarmColor()])
+        alarmState = not alarmState
+    else:
+        #print(calmColor)
+        subprocess.call(['sh', '/usr/local/bin/export-keyboard-color', calmColor])
+    sc.enter(delay, 1, alarmCallback, (sc,))
+
+s.enter(delay, 1, alarmCallback, (s,))
+s.run()

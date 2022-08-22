@@ -1,0 +1,40 @@
+#!/bin/bash
+
+if [[ $EUID -ne 0 ]];
+then
+  echo "Insufficient Permissions. Please rerun as root. Installation aborted"
+  exit 1
+fi
+
+if [ -f bin/backlight-controller.service ]
+then
+  sudo cp bin/backlight-controller.service /etc/systemd/system/backlight-controller.service
+else
+  echo "Service not found"
+  exit 1
+fi
+
+if [ -f bin/backlight-controller ]
+then
+  sudo cp bin/backlight-controller /usr/local/bin/backlight-controller
+else
+  echo "Controller not found"
+  exit 1
+fi
+
+if [ -f bin/export-keyboard-color ]
+then
+  sudo cp bin/export-keyboard-color /usr/local/bin/export-keyboard-color
+else
+  echo "Exporter not found"
+  exit 1
+fi
+
+sudo chown root:root /usr/local/bin/backlight-controller
+sudo chmod 755 /usr/local/bin/backlight-controller
+
+sudo chown root:root /usr/local/bin/export-keyboard-color
+sudo chmod 755 /usr/local/bin/export-keyboard-color
+
+# We will set rainbow to be the default executor
+sudo echo "ExecutorScript=$(pwd)/special-keyboard-handlers/rainbow.sh">/etc/default/backlight-controller.conf

@@ -1,0 +1,34 @@
+#!/bin/python3
+
+import subprocess
+import time
+import keyboard
+
+downers = []
+
+def callblack(e):
+    if False and e.name == "unknown":
+        return
+    out = 0x0
+    if e.modifiers.__contains__('ctrl') and not (e.event_type == keyboard.KEY_UP and keyboard.is_modifier(e.scan_code) and e.name == 'ctrl') or (e.event_type==keyboard.KEY_DOWN and keyboard.is_modifier(e.scan_code) and e.name == 'ctrl'):
+        out = out | 0xFF0000
+    if e.modifiers.__contains__('alt') and not (e.event_type == keyboard.KEY_UP and keyboard.is_modifier(e.scan_code) and e.name == 'alt') or (e.event_type==keyboard.KEY_DOWN and keyboard.is_modifier(e.scan_code) and e.name == 'alt'):
+        out = out | 0x0000FF
+    if e.modifiers.__contains__('shift') and not (e.event_type == keyboard.KEY_UP and keyboard.is_modifier(e.scan_code) and e.name == 'shift') or (e.event_type==keyboard.KEY_DOWN and keyboard.is_modifier(e.scan_code) and e.name == 'shift'):
+        out = out | 0x00FF00
+    if out == 0:
+        out = 0xFF2000
+    #print('{:06X}'.format(out))
+    #print(keyboard.is_modifier(e.scan_code), e.name)
+    subprocess.call(['sh', '/usr/local/bin/export-keyboard-color', '{:06X}'.format(out)])
+
+
+keyboard.hook(callblack)
+
+subprocess.call(['sh', '/usr/local/bin/export-keyboard-color', 'FF2000'])
+
+while True:
+    try:
+        time.sleep(0.1)
+    except:
+        pass

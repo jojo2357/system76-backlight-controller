@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# This is the good stuff. If we were given 3 args, then we assume them to be RGB, and do the conversion gratis, libre, free.
+# Otherwise, we will set the backlight color to be what was passed
+if [ "$#" -eq 3 ]; then
+	printf -v r "%02x" $1
+	printf -v g "%02x" $2
+	printf -v b "%02x" $3
+
+	echo $r$g$b>/sys/class/leds/system76_acpi::kbd_backlight/color 
+elif [ "$#" -eq 1 ]; then
+	echo $1>/sys/class/leds/system76_acpi::kbd_backlight/color 
+fi

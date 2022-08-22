@@ -1,0 +1,10 @@
+[Unit]
+Description=Backlight Controller
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/backlight-controller run
+
+[Install]
+WantedBy=multi-user.target

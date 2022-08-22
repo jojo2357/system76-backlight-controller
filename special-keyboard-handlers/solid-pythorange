@@ -1,0 +1,34 @@
+#!/bin/python3
+
+import subprocess
+import time
+import keyboard
+
+downers = []
+
+def callblack(e):
+    if e.name == "unknown":
+        return
+    # print(e, e.name, e.scan_code)
+    if e.event_type == keyboard.KEY_DOWN:
+        if not downers.__contains__(e.scan_code):
+            downers.append(e.scan_code)
+        subprocess.call(['sh', '/usr/local/bin/export-keyboard-color', '0020FF'])
+    else:
+        try:
+            downers.remove(e.scan_code)
+        except:
+            pass
+        if len(downers) == 0:
+            subprocess.call(['sh', '/usr/local/bin/export-keyboard-color', 'FF2000'])
+
+
+keyboard.hook(callblack)
+
+subprocess.call(['sh', 'export-keyboard-color', 'FF2000'])
+
+while True:
+    try:
+        time.sleep(1)
+    except:
+        pass
