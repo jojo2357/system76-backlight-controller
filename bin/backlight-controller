@@ -239,9 +239,9 @@ case $1 in
 
 	if [[ $EUID -ne 0 ]];
 	then
-	  sudo $ExecutorScript 1>/home/jojo2357/log.log 2>/home/jojo2357/log.blog
+	  sudo $ExecutorScript #1>/home/jojo2357/log.log 2>/home/jojo2357/log.blog
     else
-      $ExecutorScript 1>/home/jojo2357/log.log 2>/home/jojo2357/log.blog
+      $ExecutorScript #1>/home/jojo2357/log.log 2>/home/jojo2357/log.blog
 	fi    
     ;;
     
