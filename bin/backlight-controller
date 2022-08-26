@@ -1,266 +1,255 @@
 #!/bin/bash
 
 printBasicHelp() {
-	echo "Backlight controller for System76 Keyboards by jojo2357"
-	echo "usage:"
-	echo "  backlight-controller <command>"
-	echo "  backlight-controller set <options>"
-	echo ""
-	echo "Commands"
-	echo "  set        - used to set options"
-	echo "  start      - enables and starts the service"
-	echo "  stop       - stops the service"
-	echo "  uninstall  - uninstalls all related files, and terminates the service."
-	exit 0
+  echo "Backlight controller for System76 Keyboards by jojo2357"
+  echo "usage:"
+  echo "  backlight-controller <command>"
+  echo "  backlight-controller set <options>"
+  echo ""
+  echo "Commands"
+  echo "  set        - used to set options"
+  echo "  start      - enables and starts the service"
+  echo "  stop       - stops the service"
+  echo "  uninstall  - uninstalls all related files, and terminates the service."
+  exit 0
 }
 
 setOptionsHelp() {
-	echo "Backlight controller for System76 Keyboards by jojo2357"
-	echo "usage:"
-	echo "  backlight-controller set <options>"
-	echo ""
-	echo "Options"
-	echo "  -f|--file FILE - This sets the executor script to handle the backlight. Needs to have a shebang (ex #!/bin/bash or #!/bin/python3) that is supported by your system"
-	echo "  -r|--restart   - If present alongside -f, this will also restart the service so that executor will change immediately"
-	exit 0
+  echo "Backlight controller for System76 Keyboards by jojo2357"
+  echo "usage:"
+  echo "  backlight-controller set <options>"
+  echo ""
+  echo "Options"
+  echo "  -f|--file FILE - This sets the executor script to handle the backlight. Needs to have a shebang (ex #!/bin/bash or #!/bin/python3) that is supported by your system"
+  echo "  -r|--restart   - If present alongside -f, this will also restart the service so that executor will change immediately"
+  exit 0
 }
 
 # Starts the service
 start_service() {
-	sudo systemctl daemon-reload
-    sudo systemctl start backlight-controller.service
+  sudo systemctl daemon-reload
+  sudo systemctl start backlight-controller.service
 }
 
 # Stops AND disables the service from autostarting
 disable_service() {
-	stop_service
-	sudo systemctl disable backlight-controller.service
+  stop_service
+  sudo systemctl disable backlight-controller.service
 }
 
 # Stops the service, but does not change its startup behavior
 stop_service() {
-	sudo systemctl daemon-reload
-	sudo systemctl stop backlight-controller.service
+  sudo systemctl daemon-reload
+  sudo systemctl stop backlight-controller.service
 }
 
 # This is used to reload changes or restart a runner script
 restart_service() {
-	sudo systemctl daemon-reload
-	stop_service
-	start_service
+  sudo systemctl daemon-reload
+  stop_service
+  start_service
 }
 
 # takes a path and gets the whole thing. borrorwed from StackOverflow
 resolve_relative_path() (
-    # If the path is a directory, we just need to 'cd' into it and print the new path.
-    if [ -d "$1" ]; then
-        cd "$1" || return 1
-        pwd
-    # If the path points to anything else, like a file or FIFO
-    elif [ -e "$1" ]; then
-        # Strip '/file' from '/dir/file'
-        # We only change the directory if the name doesn't match for the cases where
-        # we were passed something like 'file' without './'
-        if [ ! "${1%/*}" = "$1" ]; then
-            cd "${1%/*}" || return 1
-        fi
-        # Strip all leading slashes upto the filename
-        echo "$(pwd)/${1##*/}"
-    else
-        return 1 # Failure, neither file nor directory exists.
+  # If the path is a directory, we just need to 'cd' into it and print the new path.
+  if [ -d "$1" ]; then
+    cd "$1" || return 1
+    pwd
+  # If the path points to anything else, like a file or FIFO
+  elif [ -e "$1" ]; then
+    # Strip '/file' from '/dir/file'
+    # We only change the directory if the name doesn't match for the cases where
+    # we were passed something like 'file' without './'
+    if [ ! "${1%/*}" = "$1" ]; then
+      cd "${1%/*}" || return 1
     fi
+    # Strip all leading slashes upto the filename
+    echo "$(pwd)/${1##*/}"
+  else
+    return 1 # Failure, neither file nor directory exists.
+  fi
 )
 
 # DEPRECATED
 installation() {
-	if [[ $EUID -ne 0 ]];
-	then
-	  echo "Insufficient Permissions. Please rerun as root. Installation aborted"
-	  exit 1
-	fi
-	
-	if [ -f backlight-controller.service ]
-	then
-	  sudo cp backlight-controller.service /etc/systemd/system/backlight-controller.service
-    else
-	  echo "Service not found"
-	  exit 1
-	fi
-	
-	if [ -f backlight-controller ]
-	then
-	  sudo cp backlight-controller /usr/local/bin/backlight-controller
-	else
-	  echo "Controller not found"
-	  exit 1
-	fi
-	
-	if [ -f export-keyboard-color ]
-	then
-	  sudo cp export-keyboard-color /usr/local/bin/export-keyboard-color
-	else
-	  echo "Exporter not found"
-	  exit 1
-	fi
-	
-	sudo chown root:root /usr/local/bin/backlight-controller
-	sudo chmod 755 /usr/local/bin/backlight-controller
-	
-	sudo chown root:root /usr/local/bin/export-keyboard-color
-	sudo chmod 755 /usr/local/bin/export-keyboard-color
+  if [[ $EUID -ne 0 ]]; then
+    echo "Insufficient Permissions. Please rerun as root. Installation aborted"
+    exit 1
+  fi
+
+  if [ -f backlight-controller.service ]; then
+    sudo cp backlight-controller.service /etc/systemd/system/backlight-controller.service
+  else
+    echo "Service not found"
+    exit 1
+  fi
+
+  if [ -f backlight-controller ]; then
+    sudo cp backlight-controller /usr/local/bin/backlight-controller
+  else
+    echo "Controller not found"
+    exit 1
+  fi
+
+  if [ -f export-keyboard-color ]; then
+    sudo cp export-keyboard-color /usr/local/bin/export-keyboard-color
+  else
+    echo "Exporter not found"
+    exit 1
+  fi
+
+  sudo chown root:root /usr/local/bin/backlight-controller
+  sudo chmod 755 /usr/local/bin/backlight-controller
+
+  sudo chown root:root /usr/local/bin/export-keyboard-color
+  sudo chmod 755 /usr/local/bin/export-keyboard-color
 }
 
 # No args? print help
 if [[ $# -eq 0 ]]; then
-	printBasicHelp
+  printBasicHelp
 fi
 
 # Parse the command arg
 case $1 in
-  install)
-    installation
-    ;;
-    
-  uninstall)
-    # needs sudo
-    if [[ $EUID -ne 0 ]];
-	then
-	  echo "Insufficient Permissions. Please rerun as root. Uninstall aborted"
-	  exit 1
-	fi
-	
-	disable_service
-	
-	sudo rm /usr/local/bin/backlight-controller
-	sudo rm /etc/systemd/system/backlight-controller.service
-	sudo rm /etc/default/backlight-controller.conf
-    ;;
-    
-  # if the service is NOT enabled, enable it
-  start)
-    systemctl is-active --quiet backlight-controller.service || sudo systemctl enable backlight-controller.service
-    start_service
-    ;;
-    
-  restart)
-    restart_service
-    ;;
-    
-  stop)
-    stop_service
-    ;;
-    
-  enable)
-    sudo systemctl enable backlight-controller.service
-    ;;
-    
-  disable)
-    disable_service
-    ;;
-    
-  # This is a subcommand used to set settings, namely executor script
-  set)
-    shift # remove "set" from our arg list
-    while [[ $# -gt 0 ]]; do
-	  case $1 in
-	    -f|--file)
-	      # if already passed a file arg, panic
-	      if [[ $fileSet -eq 1 ]]
-		  then
-		    echo "Cannot set more than one file"
-		    exit 1
-		  fi
-		  
-	      fileSet=1
-	      fullfyle=$(resolve_relative_path $2)
-	      
-	      # executor must exist
-	      if [[ -f $fullfyle ]]
-	      then
-	        ExecutorScript=$fullfyle
-	        
-	        # make it executable
-			sudo chmod 755 $fullfyle
-			
-			# sets the desault setting
-	        echo "ExecutorScript=${ExecutorScript}" > /etc/default/backlight-controller.conf
-	      fi
-	      
-	      shift # remove -f
-	      shift # remove payload
-	      ;;
-	      
-	    # if present, we also want to reload the executor to reflect our changes
-	    -r|--restart)
-	      restartService=1
-	      shift
-	      ;;
-	      
-		-h|--help)
-		  setOptionsHelp
-		  shift
-		  ;;
-		  
-		-*|--*)
-		  echo "Unknown option $1"
-		  exit 1
-		  ;;
-		*)
-		  echo "Unknown argument $1"
-		  exit 1
-		  ;;
-	  esac
-	done
-	
-	if [[ restartService -eq 1 ]]
-	then
-	  if [[ fileSet -eq 1 ]]
-	  then
-	    restart_service
-	  else
-	    echo "No new file was set. Please use backlight-controller restart"
-	    exit 1
-	  fi
-	else
-	  echo "Changes set. Use backlight-controller restart/start to reload or start the executor running."
-	fi
-    ;;
-    
-  # used by the service because it hangs until executor stops
-  run)
-	executor=""
+install)
+  installation
+  ;;
 
-    # load settings
-	. /etc/default/backlight-controller.conf
+uninstall)
+  # needs sudo
+  if [[ $EUID -ne 0 ]]; then
+    echo "Insufficient Permissions. Please rerun as root. Uninstall aborted"
+    exit 1
+  fi
 
-    # debug
-	echo "Running ${ExecutorScript}"
-	echo $ExecutorScript
+  disable_service
 
-	if [[ $EUID -ne 0 ]];
-	then
-	  sudo $ExecutorScript #1>/home/jojo2357/log.log 2>/home/jojo2357/log.blog
+  sudo rm /usr/local/bin/backlight-controller
+  sudo rm /etc/systemd/system/backlight-controller.service
+  sudo rm /etc/default/backlight-controller.conf
+  ;;
+
+# if the service is NOT enabled, enable it
+start)
+  systemctl is-active --quiet backlight-controller.service || sudo systemctl enable backlight-controller.service
+  start_service
+  ;;
+
+restart)
+  restart_service
+  ;;
+
+stop)
+  stop_service
+  ;;
+
+enable)
+  sudo systemctl enable backlight-controller.service
+  ;;
+
+disable)
+  disable_service
+  ;;
+
+# This is a subcommand used to set settings, namely executor script
+set)
+  shift # remove "set" from our arg list
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+    -f | --file)
+      # if already passed a file arg, panic
+      if [[ $fileSet -eq 1 ]]; then
+        echo "Cannot set more than one file"
+        exit 1
+      fi
+
+      fileSet=1
+      fullfyle=$(resolve_relative_path $2)
+
+      # executor must exist
+      if [[ -f $fullfyle ]]; then
+        ExecutorScript=$fullfyle
+
+        # make it executable
+        sudo chmod 755 $fullfyle
+
+        # sets the desault setting
+        echo "ExecutorScript=${ExecutorScript}" >/etc/default/backlight-controller.conf
+      fi
+
+      shift # remove -f
+      shift # remove payload
+      ;;
+
+    # if present, we also want to reload the executor to reflect our changes
+    -r | --restart)
+      restartService=1
+      shift
+      ;;
+
+    -h | --help)
+      setOptionsHelp
+      shift
+      ;;
+
+    -* | --*)
+      echo "Unknown option $1"
+      exit 1
+      ;;
+    *)
+      echo "Unknown argument $1"
+      exit 1
+      ;;
+    esac
+  done
+
+  if [[ restartService -eq 1 ]]; then
+    if [[ fileSet -eq 1 ]]; then
+      restart_service
     else
-      $ExecutorScript #1>/home/jojo2357/log.log 2>/home/jojo2357/log.blog
-	fi    
-    ;;
-    
-  # kills any other running processes
-  kill)
-    if pidof -o %PPID -x "backlight-controller">/dev/null; then
-      kill $(pgrep -f "backlight-controller" | grep -v ^$$\$)
-      exit 0
+      echo "No new file was set. Please use backlight-controller restart"
+      exit 1
     fi
-    ;;
-    
-  -h|--help)
-    printBasicHelp
-    ;;
-  *)
-    echo "Unknown option $1"
-    printBasicHelp
-    ;;
+  else
+    echo "Changes set. Use backlight-controller restart/start to reload or start the executor running."
+  fi
+  ;;
+
+# used by the service because it hangs until executor stops
+run)
+  executor=""
+
+  # load settings
+  . /etc/default/backlight-controller.conf
+
+  # debug
+  echo "Running ${ExecutorScript}"
+  echo $ExecutorScript
+
+  if [[ $EUID -ne 0 ]]; then
+    sudo $ExecutorScript #1>/home/jojo2357/log.log 2>/home/jojo2357/log.blog
+  else
+    $ExecutorScript #1>/home/jojo2357/log.log 2>/home/jojo2357/log.blog
+  fi
+  ;;
+
+# kills any other running processes
+kill)
+  if pidof -o %PPID -x "backlight-controller" >/dev/null; then
+    kill $(pgrep -f "backlight-controller" | grep -v ^$$\$)
+    exit 0
+  fi
+  ;;
+
+-h | --help)
+  printBasicHelp
+  ;;
+*)
+  echo "Unknown option $1"
+  printBasicHelp
+  ;;
 esac
 
 POSITIONAL_ARGS=()
-

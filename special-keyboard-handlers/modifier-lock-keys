@@ -1,0 +1,99 @@
+#!/bin/python3
+
+import subprocess
+import time
+import keyboard
+import sched
+
+downers = []
+
+capsLock = False
+numsLock = False
+
+alarmState = False
+
+alarmFore = 0
+
+calmColor = 0xFF2000
+
+basicBack = calmColor
+
+subprocess.run('xhost si:localuser:root', shell=True)
+
+def outit():
+    global basicBack, alarmFore, capsLock, numsLock
+    if capsLock and not numsLock and alarmFore == 0xFF0000:
+        subprocess.call(['sh', '/usr/local/bin/export-keyboard-color', 'FF0000'])
+    else:
+        subprocess.call(['sh', '/usr/local/bin/export-keyboard-color', '{:06X}'.format(basicBack | alarmFore)])
+
+def calcLocks():
+    #print(subprocess.run("DISPLAY=:1 xset q | grep -Po 'LED.*\K[0-9]'", shell=True, capture_output=True))
+    #print(subprocess.run("xset q | grep -Po 'LED.*\K[0-9]'", shell=True, capture_output=True, ))
+    out = subprocess.run("DISPLAY=:1 xset q | grep -Po 'LED.*\K[0-9]'", shell=True, capture_output=True).stdout[0] - ord('0')
+    global capsLock, numsLock
+    capsLock = out & 0x1
+    numsLock = out & 0x2
+
+def alarmColor():
+    global capsLock, numsLock
+    if capsLock and not numsLock:
+        return 0xFF0000
+    elif capsLock:
+        return 0x00E2FF
+    elif not numsLock:
+        return 0xFF8000
+
+calcLocks()
+
+s = sched.scheduler(time.time, time.sleep)
+
+delay = 0.25
+
+def alarmCallback(sc):
+    calcLocks()
+    global capsLock, numsLock, alarmState, alarmFore
+    if capsLock or not numsLock:
+        if alarmState:
+            #print(calmColor)
+            alarmFore = 0
+        else:
+            #print(alarmColor())
+            alarmFore = alarmColor()
+        alarmState = not alarmState
+    else:
+        #print(calmColor)
+        alarmFore = 0
+    outit()
+    sc.enter(delay, 1, alarmCallback, (sc,))
+
+def callblack(e):
+    if False and e.name == "unknown":
+        return
+    out = 0x0
+    if e.modifiers.__contains__('ctrl') and not (e.event_type == keyboard.KEY_UP and keyboard.is_modifier(e.scan_code) and e.name == 'ctrl') or (e.event_type==keyboard.KEY_DOWN and keyboard.is_modifier(e.scan_code) and e.name == 'ctrl'):
+        out = out | 0xFF0000
+    if e.modifiers.__contains__('alt') and not (e.event_type == keyboard.KEY_UP and keyboard.is_modifier(e.scan_code) and e.name == 'alt') or (e.event_type==keyboard.KEY_DOWN and keyboard.is_modifier(e.scan_code) and e.name == 'alt'):
+        out = out | 0x0000FF
+    if e.modifiers.__contains__('shift') and not (e.event_type == keyboard.KEY_UP and keyboard.is_modifier(e.scan_code) and e.name == 'shift') or (e.event_type==keyboard.KEY_DOWN and keyboard.is_modifier(e.scan_code) and e.name == 'shift'):
+        out = out | 0x00FF00
+    if out == 0:
+        out = calmColor
+    #print('{:06X}'.format(out))
+    #print(keyboard.is_modifier(e.scan_code), e.name)
+    global basicBack
+    basicBack = out
+    outit()
+
+keyboard.hook(callblack)
+
+outit()
+
+s.enter(delay, 1, alarmCallback, (s,))
+s.run()
+
+while True:
+    try:
+        time.sleep(0.1)
+    except:
+        pass
